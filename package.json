@@ -17,10 +17,11 @@
     "Stellar"
   ],
   "scripts": {
-    "test": " mocha",
+    "prepare": "./node_modules/.bin/babel src --out-dir lib",
+    "test": " mocha --require babel-register",
     "start": "node balance.js",
     "debug": "node --nolazy --inspect-brk=9229 index.js",
-    "run": "run"
+    "run": "node index.js"
   },
   "dependencies": {
     "bip39": "^2.5.0",
@@ -35,11 +36,18 @@
     "minimist": "^1.2.0",
     "minimist-options": "^3.0.2",
     "request": "^2.88.0",
-    "stellar-base": "^0.8.2",
+    "stellar-base": "^0.8.3",
     "stellar-hd-wallet": "^0.0.8",
     "wallet-address-validator": "^0.1.7"
   },
   "devDependencies": {
-    "mocha": "^5.2.0"
+    "mocha": "^5.2.0",
+    "tslint": "^5.11.0",
+    "tsutils": "^3.0.0",
+    "typescript": "^3.0.1",
+    "babel-cli": "^6.26.0",
+    "babel-plugin-add-module-exports": "^0.2.1",
+    "babel-preset-env": "^1.6.1",
+    "babel-register": "^6.26.0"
   }
 }
