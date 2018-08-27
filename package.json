@@ -17,41 +17,31 @@
     "url": "git+https://github.com/miguelmoreno/XlmAddGenBalance.git"
   },
   "keywords": [
-    "Stellar"
+    "SEP-0005",
+    "SLIP-0010",
+    "BIP-0039",
+    "BIP-0044",
+    "ed25519",
+    "stellar",
+    "cryptocurrencies",
+    "keys"
   ],
   "scripts": {
-    "prepare": "./node_modules/.bin/babel src --out-dir lib",
-    "test": " mocha --require babel-register",
-    "start": "node balance.js",
+    "test": "mocha",
     "debug": "node --nolazy --inspect-brk=9229 index.js",
-    "run": "node index.js"
+    "prepare": "./node_modules/.bin/babel src --out-dir lib"
   },
   "dependencies": {
     "bip39": "^2.5.0",
-    "bitcoinjs-lib": "^4.0.1",
-    "csvtojson": "^2.0.8",
-    "deasync": "^0.1.13",
-    "ed25519-hd-key": "^1.0.0",
-    "fast-csv": "^2.4.1",
-    "fs-extra": "^7.0.0",
-
-    "lodash": "^4.17.10",
-    "log-update": "^2.3.0",
-    "minimist": "^1.2.0",
-    "minimist-options": "^3.0.2",
-    "request": "^2.88.0",
-    "stellar-base": "^0.8.3",
-    "stellar-hd-wallet": "^0.0.8",
-    "wallet-address-validator": "^0.1.7"
+    "ed25519-hd-key": "^0.5.0",
+    "lodash": "4.17.10",
+    "stellar-base": "^0.8.2"
   },
   "devDependencies": {
-    "mocha": "^5.2.0",
-    "tslint": "^5.11.0",
-    "tsutils": "^3.0.0",
-    "typescript": "^3.0.1",
     "babel-cli": "^6.26.0",
     "babel-plugin-add-module-exports": "^0.2.1",
-    "babel-preset-env": "^1.6.1",
-    "babel-register": "^6.26.0"
+    "babel-preset-env": "^1.7.0",
+    "babel-register": "^6.26.0",
+    "mocha": "^4.1.0"
   }
 }
