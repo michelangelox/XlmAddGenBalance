@@ -1,6 +1,10 @@
-import assert from 'assert'
-import has from 'lodash/has'
-import StellarHDWallet from '../src/stellar-hd-wallet'
+//import assert from 'assert'
+//import has from 'lodash/has'
+//import StellarHDWallet from '../src/stellar-hd-wallet'
+
+const assert = require("assert");
+const has = require("lodash/has");
+const StellarHDWallet = require("stellar-hd-wallet");
 
 const assertKeypair = (actualKeypair, expectedPublicKey, expectedSecret) => {
   assert.equal(actualKeypair.publicKey(), expectedPublicKey)
@@ -8,15 +12,18 @@ const assertKeypair = (actualKeypair, expectedPublicKey, expectedSecret) => {
 }
 
 const specTestCase = num => () => {
-  const testCase = require(`./data/sep0005-testcase-${num}.json`)
+  console.log(
+    num
+  );
+  const testCase = require("./data/sep0005-testcase-" + num + ".json")
 
-  const wallet = has(testCase, 'passphrase')
-    ? StellarHDWallet.fromMnemonic(testCase.seedWords, testCase.passphrase)
-    : StellarHDWallet.fromMnemonic(testCase.seedWords)
+  const wallet = has(testCase, 'passphrase') ?
+    StellarHDWallet.fromMnemonic(testCase.seedWords, testCase.passphrase) :
+    StellarHDWallet.fromMnemonic(testCase.seedWords)
 
   it('derives expected parent key', () => {
     assert.equal(
-      wallet.derive(`m/44'/148'`).toString('hex'),
+      wallet.derive("m/44'/148'").toString('hex'),
       testCase.parentKey
     )
   })

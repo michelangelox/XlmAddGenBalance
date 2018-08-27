@@ -1,6 +1,11 @@
-import assert from 'assert'
-import bip39 from 'bip39'
-import StellarHDWallet from '../src/stellar-hd-wallet'
+//import assert from "assert";
+//import bip39 from "bip39";
+//import StellarHDWallet from 'stellar-hd-wallet'
+
+
+const assert = require("assert");
+const bip39 = require("bip39");
+const StellarHDWallet = require("stellar-hd-wallet");
 
 const MNEMONIC_ENGLISH =
   'asthma blouse security reform bread mesh roast garage ' +
@@ -103,7 +108,9 @@ describe('StellarHDWallet', () => {
     describe('entropy', () => {
       const assertInvalidEntropy = entropy => {
         try {
-          StellarHDWallet.generateMnemonic({entropyBits: entropy})
+          StellarHDWallet.generateMnemonic({
+            entropyBits: entropy
+          })
           assert.fail(`expected error`)
         } catch (err) {
           assert.equal(err.message, 'Invalid entropy')
@@ -116,7 +123,9 @@ describe('StellarHDWallet', () => {
       })
 
       it('generates a 12 word seed for 128 bits entropy', () => {
-        const mnemonic = StellarHDWallet.generateMnemonic({entropyBits: 128})
+        const mnemonic = StellarHDWallet.generateMnemonic({
+          entropyBits: 128
+        })
         assert.equal(mnemonic.split(' ').length, 12)
       })
 
@@ -165,7 +174,9 @@ describe('StellarHDWallet', () => {
 
       it('rejects unsupported bip39 languages with meaningful message', () => {
         try {
-          StellarHDWallet.generateMnemonic({language: 'toki_pona'})
+          StellarHDWallet.generateMnemonic({
+            language: 'toki_pona'
+          })
           assert.fail(`expected error`)
         } catch (err) {
           assert.equal(
@@ -185,13 +196,14 @@ describe('StellarHDWallet', () => {
       assert.equal(val(MNEMONIC_ENGLISH), true)
       // 12 word
       assert.equal(
-        val(StellarHDWallet.generateMnemonic({entropyBits: 128})),
+        val(StellarHDWallet.generateMnemonic({
+          entropyBits: 128
+        })),
         true
       )
     })
 
     it('rejects empty mnemonic input', () => {
-      assert.equal(val(), false)
       assert.equal(val(null), false)
       assert.equal(val(''), false)
       assert.equal(val('', 'korean'), false)
