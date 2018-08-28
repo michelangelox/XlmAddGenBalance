@@ -1,8 +1,3 @@
-//import assert from "assert";
-//import bip39 from "bip39";
-//import StellarHDWallet from 'stellar-hd-wallet'
-
-
 const assert = require("assert");
 const bip39 = require("bip39");
 const StellarHDWallet = require("stellar-hd-wallet");
