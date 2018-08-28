@@ -12,9 +12,6 @@ const assertKeypair = (actualKeypair, expectedPublicKey, expectedSecret) => {
 }
 
 const specTestCase = num => () => {
-  console.log(
-    num
-  );
   const testCase = require("./data/sep0005-testcase-" + num + ".json")
 
   const wallet = has(testCase, 'passphrase') ?
