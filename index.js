@@ -1,13 +1,20 @@
 //const bip39 = require("bip39");
 //const bitcoinlib = require("bitcoinjs-lib");
 const StellarHDWallet = require("stellar-hd-wallet");
-const has = require("lodash/has");
 const each = require("array-each");
 const loadInputFile = require("load-json-file");
-const csv = require("fast-csv");
-const fse = require('fs-extra')
+const ObjectsToCsv = require('objects-to-csv');
 
+var outputKeys = [];
+const basePath = `m/44'/148'/`;
+const output = './data/output.csv';
 
+//Generate Derivation Path Object
+var derivationCollection = [];
+for (let i = 0; i < 3; i++) {
+    var outerIndex = i;
+    derivationCollection.push(outerIndex);
+}
 
 //Constructor for holding each one of the keys
 function OutputKey(_Seed, _Passphrase, _DerivationPath, _Keys) {
@@ -17,21 +24,46 @@ function OutputKey(_Seed, _Passphrase, _DerivationPath, _Keys) {
     this.Keys = _Keys
 }
 
-//Array for holding all the keys
-var outputKeys = [];
-
-//Generate Derivation Path Object
-var derivationCollection = [];
-for (let i = 0; i < 3; i++) {
-    var outerIndex = i;
-    derivationCollection.push(outerIndex);
-
-    //for (let j = 0; j < 3; j++) {
-    //    derivationCollection.push(outerIndex + "'/" + j);
-    //}
+function getFullDerivationPath(_path) {
+    return basePath + _path + "'";
 }
 
-const output = './data/output.json';
+function getData(_seed, _seed_index, _passphrase, _passphrase_index, _path, _path_index, _target) {
+    const wallet = (_passphrase != null) ? StellarHDWallet.fromMnemonic(_seed, _passphrase) : StellarHDWallet.fromMnemonic(_seed);
+
+    var pubKey = wallet.getPublicKey(_path);
+    const fullpath = getFullDerivationPath(_path);
+    var derive = wallet.derive(fullpath);
+
+    let _s = {
+        seed_index: _seed_index,
+        seedShort: _seed.substr(0, 10) + "********"
+    }
+
+    let _p = {
+        passphrase_index: _passphrase_index,
+        passphrase: _passphrase.substr(0, 3) + "********"
+    }
+
+    let _d = {
+        path_index: _path_index,
+        path: fullpath,
+        derive: derive,
+        parentkey: derive.toString('hex')
+    }
+
+    let _k = {
+        pubkey: pubKey,
+        privkey: null,
+        ismatch: (pubKey == _target)
+    }
+
+    console.log("PublicKey - " + fullpath + "']: " + pubKey + " = " + _k.ismatch);
+
+    return new OutputKey(_s, _p, _d, _k);
+}
+
+
 
 //load json file, parse and recursively populate the object with keys
 loadInputFile("./data/input.json")
@@ -48,48 +80,22 @@ loadInputFile("./data/input.json")
                 if (StellarHDWallet.validateMnemonic(_seed)) {
                     const shortSeed = seed.substr(0, 30) + "...";
 
-                    let _s = {
-                        index: i,
-                        seedShort: shortSeed
-                    }
-
                     each(json.passwords, function(_passphrase, j) {
                         const passphrase = _passphrase;
 
-                        let _p = {
-                            index: j,
-                            passphrase: passphrase
-                        }
-
                         each(derivationCollection, function(_path, k) {
-                            const path = _path;
+                            var path = _path;
 
-                            const basePath = `m/44'/148'/`;
-                            const fullpath = basePath + path + "'";
+                            var fullpath = getFullDerivationPath(path);
 
-                            const wallet = (passphrase != null) ? StellarHDWallet.fromMnemonic(seed, passphrase) : StellarHDWallet.fromMnemonic(seed);
-                            var pubKey = wallet.getPublicKey(path);
-                            var derive = wallet.derive(fullpath);
-
-                            let _d = {
-                                index: k,
-                                path: fullpath,
-                                derive: derive,
-                                parentkey: derive.toString('hex')
-                            }
-
-
-                            //console.log("PublicKey - " + "[m/44'/148'/" + path + "']: " + pubKey);
-
-                            let _k = {
-                                pubkey: pubKey,
-                                privkey: null,
-                                ismatch: (pubKey == target)
-                            }
-
-                            let key = new OutputKey(_s, _p, _d, _k);
-
+                            const key = getData(seed, i, passphrase, j, path, k, fullpath, k, target);
                             outputKeys.push(key);
+
+                            //one level deeper, one more round
+                            for (let m = 0; m < 3; m++) {
+                                secondlevelpath = path + "'/" + m
+                                outputKeys.push(getData(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target));
+                            }
 
                         });
 
@@ -103,13 +109,6 @@ loadInputFile("./data/input.json")
         } catch (error) {
             console.log(error);
         }
-        let results = JSON.stringify(outputKeys);
 
-        fse.writeJson(output, results)
-            .then(() => {
-                console.log('success!')
-            })
-            .catch(err => {
-                console.error(err)
-            })
+        var results = new ObjectsToCsv(outputKeys).toDisk(output);
     });
