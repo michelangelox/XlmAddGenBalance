@@ -34,6 +34,7 @@
   "dependencies": {
     "array-each": "^1.0.1",
     "bip39": "^2.5.0",
+    "bip44-constants": "^5.2.0",
     "bitcoinjs-lib": "^4.0.1",
     "csv": "^3.1.0",
     "csvtojson": "^2.0.8",

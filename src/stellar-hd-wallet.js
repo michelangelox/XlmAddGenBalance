@@ -129,6 +129,18 @@ class StellarHDWallet {
   }
 
   /**
+   * Get public key at custom derivation path
+   * 
+   */
+
+  getCustomPathPublicKey(path, sub) {
+    const derivation = path + `${sub}'`;
+    const key = this.derive(derivation);
+    return Keypair.fromRawEd25519Seed(key).publicKey();
+  }
+
+
+  /**
    * Get secret for account at index
    * @param {Number} index Account index into path m/44'/148'/{index}
    * @return {string} Secret

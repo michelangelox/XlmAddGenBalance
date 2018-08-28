@@ -6,7 +6,17 @@ const each = require("array-each");
 const loadInputFile = require("load-json-file");
 
 
-//var Derivation = ["m/44'/148'"];
+//Generate Derivation Path Object
+var derivationCollection = [];
+
+for (let i = 0; i < 11; i++) {
+    var outerIndex = i;
+    derivationCollection.push(outerIndex);
+
+    for (let j = 0; j < 11; j++) {
+        derivationCollection.push(outerIndex + "'/" + j);
+    }
+}
 
 loadInputFile("./data/input.json")
     .then(json => {
@@ -18,59 +28,32 @@ loadInputFile("./data/input.json")
             console.log("-----------------------------------------------------------");
             const seed = _seed;
 
-            console.log("seed loop: " + seed.substr(0, 20) + "...");
-
             if (StellarHDWallet.validateMnemonic(_seed)) {
+                const shortSeed = seed.substr(0, 20) + "...";
+                console.log("validated seed loop: " + shortSeed);
 
                 each(json.passwords, function(_passphrase, j) {
-                    console.log("   passphrase loop");
+                    const passphrase = _passphrase;
+                    console.log("   passphrase loop: -" + passphrase + "- + " + shortSeed);
 
-                    const passphrase = (_passphrase == "") ? null : _passphrase;
+                    each(derivationCollection, function(_path, k) {
+                        const path = _path;
 
-                    console.log("      valid Mnemonic: " + seed.substr(0, 20) + "... " + ((passphrase != null) ? ("+ pwd: " + passphrase) : ""));
+                        const wallet = (passphrase != null) ? StellarHDWallet.fromMnemonic(seed, passphrase) : StellarHDWallet.fromMnemonic(seed);
+                        var pubKey = wallet.getPublicKey(path);
 
-                    const wallet = (passphrase != null) ? StellarHDWallet.fromMnemonic(seed, passphrase) : StellarHDWallet.fromMnemonic(seed);
+                        console.log("         PublicKey[m/44'/148'/" + path + "']: " + pubKey);
 
-                    //wallet.derive(`m/44'/148'/0'`)
-                    //wallet.derive("m/44'/148'").toString('hex')
+                        if (pubKey == target) {
+                            console.log("!!!!!!!!FOUND!!!!!!!!!");
+                        }
+                    });
 
-                    const pubKey = wallet.getPublicKey(0);
-
-                    if (pubKey == target) {
-                        console.log("!!!!!!!!FOUND!!!!!!!!!");
-                    }
-
-                    console.log("      PublicKey: " + pubKey);
                     console.log("");
                 })
             } else {
-                console.log("Invalid Mnemonic");
+                console.log("invalid seed: " + seed.substr(0, 20) + "...");
             }
 
         })
     })
-
-
-
-
-
-/*
-for (var i = 0; ++i; i < Mnemonic.length() - 1) {
-    var seed = Mnemonic[i - 1].
-    ;
-    var passphrase = Passphrase[0];
-
-    //var path = Derivation[0]
-
-    const validated = StellarHDWallet.validateMnemonic(seed)
-
-    if (validated) {
-        console.log("valid Mnemonic");
-        const wallet = has(passphrase) ? StellarHDWallet.fromMnemonic(seed, passphrase) : StellarHDWallet.fromMnemonic(seed);
-
-        console.log("wallet.getPublicKey(0): " + wallet.getPublicKey(0));
-        console.log("wallet.getSecret(0): " + wallet.getSecret(0));
-    } else {
-        console.log("not valid!!");
-    }
-}*/
