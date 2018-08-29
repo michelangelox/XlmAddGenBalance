@@ -4,26 +4,12 @@ const StellarHDWallet = require("stellar-hd-wallet");
 const each = require("array-each");
 const loadInputFile = require("load-json-file");
 const fse = require('fs-extra');
-
 const jsonfile = require('jsonfile')
 const Json2csvParser = require('json2csv').Parser;
+const Json2csvTransform = require('json2csv').Transform;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 
 const outputFile = './data/output.csv';
-
-// const csvWriter = createCsvWriter({
-//     header: [
-//         seed_index:         'Seed.seed_index',
-//         seed:               'Seed',
-//         passphrase.index:   'Passphrase.passphrase_index',
-//         phassphrase:        'Passphrase.passphrase',
-//         path_index:         'DerivationPath.path_index',
-//         path:               'DerivationPath.path',
-//         parentkey:          'DerivationPath.parentkey',
-//         pubkey:             'Keys.pubkey',
-//         ismatch:            'Keys.isMatch'
-//     ]
-// });
 
 var keysArray = [];
 const basePath = `m/44'/148'/`;
@@ -76,12 +62,10 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
         isMatch: (pubKey == _target)
     }
 
-    console.log("PublicKey - " + fullpath + "]: " + pubKey + " = " + _k.isMatch);
+    //console.log("PublicKey [" + _s.seed_index + "." + _p.passphrase_index + "." + _path_index + "] - [" + fullpath + "]: " + pubKey + " = " + _k.isMatch);
 
     return new OutputKey(_s, _p, _d, _k);
 }
-
-
 
 //load json file, parse and recursively populate the object with keys
 loadInputFile("./data/input.json")
@@ -91,8 +75,6 @@ loadInputFile("./data/input.json")
 
             each(json.seeds, function(_seed, i) {
 
-                console.log("");
-                //console.log("-----------------------------------------------------------");
                 const seed = _seed;
 
                 if (StellarHDWallet.validateMnemonic(_seed)) {
@@ -111,16 +93,13 @@ loadInputFile("./data/input.json")
 
                             //one level deeper, one more round
                             for (let m = 0; m < 3; m++) {
-                                secondlevelpath = path + "'/" + m + "'";
+                                secondlevelpath = path + "'/" + m;
 
                                 const address = getAddressFromSeed(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target);
 
                                 keysArray.push(address);
                             }
-
                         });
-
-                        console.log("");
                     })
                 } else {
                     console.log("invalid seed: " + seed.substr(0, 20) + "...");
@@ -131,63 +110,29 @@ loadInputFile("./data/input.json")
             console.log(error);
         }
 
+        const opts = {
+            fields: ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'],
+            delimiter: ", \t ",
+            quote: '',
+            unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
+        };
 
-        const csvStringifier = createCsvStringifier({
-            header: [{
-                    seed_index: 'Seed.seed_index'
-                },
-                {
-                    seed: 'seed'
-                },
-                {
-                    passphrase_index: 'Passphrase.passphrase_index'
-                },
-                {
-                    phassphrase: 'Passphrase.passphrase'
-                },
-                {
-                    path_index: 'DerivationPath.path_index'
-                },
-                {
-                    path: 'DerivationPath.path'
-                },
-                {
-                    parentkey: 'DerivationPath.parentkey'
-                },
-                {
-                    pubkey: 'Keys.pubkey'
-                },
-                {
-                    ismatch: 'Keys.isMatch'
-                }
-            ];
-        });
+        try {
+            const parser = new Json2csvParser(opts);
+            const outputCsvString = parser.parse(keysArray)
+            console.log(outputCsvString);
 
+            fse.outputFile(outputFile, outputCsvString)
+                .then(() => fse.readFile(outputFile, 'utf8'))
+                .then(data => {
+                    console.log(data)
+                })
+                .catch(err => {
+                    console.error(err)
+                })
 
-        console.log(csvStringifier.getHeaderString());
-        console.log(csvStringifier.stringifyRecords(keysArray));
-
-
-
-        //const fields = ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'];
-        // const opts = {
-        //     fields,
-        //     quote: '',
-        //      unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
-        // };
-
-        //try {
-        //     const parser = new Json2csvParser(opts);
-        //     const csv = parser.parse(keysArray)
-        //     console.log(csv);
-        // } catch (err) {
-        //     console.error(err);
-        // }
-
-        // jsonfile.writeFileSync(outputFile, keysArray, {
-        //     spaces: 2,
-        //     EOL: '\r\n'
-        // })
-
+        } catch (err) {
+            console.error(err);
+        }
         console.log("done");
     });
