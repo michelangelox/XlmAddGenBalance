@@ -7,11 +7,26 @@ const fse = require('fs-extra');
 
 const jsonfile = require('jsonfile')
 const Json2csvParser = require('json2csv').Parser;
+const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
+
+const outputFile = './data/output.csv';
+
+// const csvWriter = createCsvWriter({
+//     header: [
+//         seed_index:         'Seed.seed_index',
+//         seed:               'Seed',
+//         passphrase.index:   'Passphrase.passphrase_index',
+//         phassphrase:        'Passphrase.passphrase',
+//         path_index:         'DerivationPath.path_index',
+//         path:               'DerivationPath.path',
+//         parentkey:          'DerivationPath.parentkey',
+//         pubkey:             'Keys.pubkey',
+//         ismatch:            'Keys.isMatch'
+//     ]
+// });
 
 var keysArray = [];
 const basePath = `m/44'/148'/`;
-const outputFile = './data/output.csv';
-
 
 //Generate Derivation Path Object
 var derivationCollection = [];
@@ -61,7 +76,7 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
         isMatch: (pubKey == _target)
     }
 
-    console.log("PublicKey - " + fullpath + "]: " + pubKey + " = " + _k.ismatch);
+    console.log("PublicKey - " + fullpath + "]: " + pubKey + " = " + _k.isMatch);
 
     return new OutputKey(_s, _p, _d, _k);
 }
@@ -116,20 +131,58 @@ loadInputFile("./data/input.json")
             console.log(error);
         }
 
-        const fields = ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'];
-        const opts = {
-            fields,
-            quote: '',
-            unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
-        };
 
-        try {
-            const parser = new Json2csvParser(opts);
-            const csv = parser.parse(keysArray)
-            console.log(csv);
-        } catch (err) {
-            console.error(err);
-        }
+        const csvStringifier = createCsvStringifier({
+            header: [{
+                    seed_index: 'Seed.seed_index'
+                },
+                {
+                    seed: 'seed'
+                },
+                {
+                    passphrase_index: 'Passphrase.passphrase_index'
+                },
+                {
+                    phassphrase: 'Passphrase.passphrase'
+                },
+                {
+                    path_index: 'DerivationPath.path_index'
+                },
+                {
+                    path: 'DerivationPath.path'
+                },
+                {
+                    parentkey: 'DerivationPath.parentkey'
+                },
+                {
+                    pubkey: 'Keys.pubkey'
+                },
+                {
+                    ismatch: 'Keys.isMatch'
+                }
+            ];
+        });
+
+
+        console.log(csvStringifier.getHeaderString());
+        console.log(csvStringifier.stringifyRecords(keysArray));
+
+
+
+        //const fields = ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'];
+        // const opts = {
+        //     fields,
+        //     quote: '',
+        //      unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
+        // };
+
+        //try {
+        //     const parser = new Json2csvParser(opts);
+        //     const csv = parser.parse(keysArray)
+        //     console.log(csv);
+        // } catch (err) {
+        //     console.error(err);
+        // }
 
         // jsonfile.writeFileSync(outputFile, keysArray, {
         //     spaces: 2,
