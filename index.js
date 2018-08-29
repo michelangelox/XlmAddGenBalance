@@ -3,11 +3,15 @@
 const StellarHDWallet = require("stellar-hd-wallet");
 const each = require("array-each");
 const loadInputFile = require("load-json-file");
-const ObjectsToCsv = require('objects-to-csv');
+const fse = require('fs-extra');
 
-var outputKeys = [];
+const jsonfile = require('jsonfile')
+const Json2csvParser = require('json2csv').Parser;
+
+var keysArray = [];
 const basePath = `m/44'/148'/`;
-const output = './data/output.csv';
+const outputFile = './data/output.csv';
+
 
 //Generate Derivation Path Object
 var derivationCollection = [];
@@ -28,9 +32,8 @@ function getFullDerivationPath(_path) {
     return basePath + _path + "'";
 }
 
-function getData(_seed, _seed_index, _passphrase, _passphrase_index, _path, _path_index, _target) {
+function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, _path, _path_index, _target) {
     const wallet = (_passphrase != null) ? StellarHDWallet.fromMnemonic(_seed, _passphrase) : StellarHDWallet.fromMnemonic(_seed);
-
     var pubKey = wallet.getPublicKey(_path);
     const fullpath = getFullDerivationPath(_path);
     var derive = wallet.derive(fullpath);
@@ -42,7 +45,7 @@ function getData(_seed, _seed_index, _passphrase, _passphrase_index, _path, _pat
 
     let _p = {
         passphrase_index: _passphrase_index,
-        passphrase: _passphrase.substr(0, 3) + "********"
+        passphrase: _passphrase.substr(0, 5) + "********"
     }
 
     let _d = {
@@ -55,10 +58,10 @@ function getData(_seed, _seed_index, _passphrase, _passphrase_index, _path, _pat
     let _k = {
         pubkey: pubKey,
         privkey: null,
-        ismatch: (pubKey == _target)
+        isMatch: (pubKey == _target)
     }
 
-    console.log("PublicKey - " + fullpath + "']: " + pubKey + " = " + _k.ismatch);
+    console.log("PublicKey - " + fullpath + "]: " + pubKey + " = " + _k.ismatch);
 
     return new OutputKey(_s, _p, _d, _k);
 }
@@ -88,13 +91,16 @@ loadInputFile("./data/input.json")
 
                             var fullpath = getFullDerivationPath(path);
 
-                            const key = getData(seed, i, passphrase, j, path, k, fullpath, k, target);
-                            outputKeys.push(key);
+                            const key = getAddressFromSeed(seed, i, passphrase, j, path, k, fullpath, k, target);
+                            keysArray.push(key);
 
                             //one level deeper, one more round
                             for (let m = 0; m < 3; m++) {
-                                secondlevelpath = path + "'/" + m
-                                outputKeys.push(getData(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target));
+                                secondlevelpath = path + "'/" + m + "'";
+
+                                const address = getAddressFromSeed(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target);
+
+                                keysArray.push(address);
                             }
 
                         });
@@ -110,5 +116,25 @@ loadInputFile("./data/input.json")
             console.log(error);
         }
 
-        var results = new ObjectsToCsv(outputKeys).toDisk(output);
+        const fields = ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'];
+        const opts = {
+            fields,
+            quote: '',
+            unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
+        };
+
+        try {
+            const parser = new Json2csvParser(opts);
+            const csv = parser.parse(keysArray)
+            console.log(csv);
+        } catch (err) {
+            console.error(err);
+        }
+
+        // jsonfile.writeFileSync(outputFile, keysArray, {
+        //     spaces: 2,
+        //     EOL: '\r\n'
+        // })
+
+        console.log("done");
     });
