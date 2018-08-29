@@ -41,12 +41,12 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
 
     let _s = {
         seed_index: _seed_index,
-        seedShort: _seed.substr(0, 10) + "********"
+        seedShort: (_seed.substr(0, 5) + "********").substr(0, 5)
     }
 
     let _p = {
         passphrase_index: _passphrase_index,
-        passphrase: _passphrase.substr(0, 5) + "********"
+        passphrase: (_passphrase.substr(0, 5) + "********").substr(0, 5)
     }
 
     let _d = {
@@ -112,7 +112,7 @@ loadInputFile("./data/input.json")
 
         const opts = {
             fields: ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'],
-            delimiter: ", \t ",
+            delimiter: ", \t",
             quote: '',
             unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
         };
