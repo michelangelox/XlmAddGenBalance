@@ -12,6 +12,9 @@ const CsvStream = require('json2csv-stream');
 const stringToStream = require('string-to-stream');
 const transform = require('stream-transform');
 
+const depth_1stround = 11;
+const depth_2ndround = 11;
+
 const outputFile = './data/output.csv';
 
 var keysArray = [];
@@ -50,7 +53,7 @@ const opts = {
 
 //Generate Derivation Path Object
 var derivationCollection = [];
-for (let i = 0; i < 3; i++) {
+for (let i = 0; i < depth_1stround; i++) {
     var outerIndex = i;
     derivationCollection.push(outerIndex);
 }
@@ -128,7 +131,7 @@ loadInputFile("./data/input.json")
                             keysArray.push(key);
 
                             //one level deeper, one more round
-                            for (let m = 0; m < 3; m++) {
+                            for (let m = 0; m < depth_2ndround; m++) {
                                 secondlevelpath = path + "'/" + m;
 
                                 const address = getAddressFromSeed(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target);
