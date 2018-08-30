@@ -49,6 +49,7 @@
     "json-stable-stringify": "^1.0.1",
     "json-stringify-safe": "^5.0.1",
     "json2csv": "^4.2.1",
+    "json2csv-stream": "^0.1.4",
     "jsonfile": "^4.0.0",
     "load-json-file": "^5.0.0",
     "lodash": "4.17.10",
@@ -60,6 +61,7 @@
     "request": "^2.88.0",
     "stellar-base": "^0.8.2",
     "stellar-hd-wallet": "0.0.8",
+    "string-to-stream": "^1.1.1",
     "stringify-object": "^3.2.2",
     "write": "^1.0.3",
     "write-json-file": "^3.0.0"

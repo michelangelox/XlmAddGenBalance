@@ -8,11 +8,45 @@ const jsonfile = require('jsonfile')
 const Json2csvParser = require('json2csv').Parser;
 const Json2csvTransform = require('json2csv').Transform;
 const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
+const CsvStream = require('json2csv-stream');
+const stringToStream = require('string-to-stream');
+const transform = require('stream-transform');
 
 const outputFile = './data/output.csv';
 
 var keysArray = [];
 const basePath = `m/44'/148'/`;
+
+const opts = {
+    fields: [{
+        label: "Seed Index",
+        value: 'Seed.seed_index'
+    }, {
+        label: "Shortened Seed",
+        value: "Seed.seedShort"
+    }, {
+        label: "Password Index",
+        value: "Passphrase.passphrase_index"
+    }, {
+        label: "Shortened Password",
+        value: "Passphrase.passphrase"
+    }, {
+        label: "Derivation Path",
+        value: "DerivationPath.path"
+    }, {
+        label: "Derivation Parent Key",
+        value: "DerivationPath.parentkey"
+    }, {
+        label: "Stellar Public Key",
+        value: "Keys.pubkey"
+    }, {
+        label: "Matches Seeked Key",
+        value: "Keys.isMatch"
+    }],
+    delimiter: ", ",
+    quote: '',
+    unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
+};
 
 //Generate Derivation Path Object
 var derivationCollection = [];
@@ -51,9 +85,9 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
 
     let _d = {
         path_index: _path_index,
-        path: fullpath,
         derive: derive,
-        parentkey: derive.toString('hex')
+        parentkey: derive.toString('hex'),
+        path: fullpath + (fullpath.length <= 13) ? fullpath + "\t" + "\t" : null,
     }
 
     let _k = {
@@ -73,6 +107,8 @@ loadInputFile("./data/input.json")
         try {
             const target = json.target;
 
+            console.log("Looking for : " + target);
+
             each(json.seeds, function(_seed, i) {
 
                 const seed = _seed;
@@ -85,7 +121,7 @@ loadInputFile("./data/input.json")
 
                         each(derivationCollection, function(_path, k) {
                             var path = _path;
-
+                            5
                             var fullpath = getFullDerivationPath(path);
 
                             const key = getAddressFromSeed(seed, i, passphrase, j, path, k, fullpath, k, target);
@@ -96,6 +132,17 @@ loadInputFile("./data/input.json")
                                 secondlevelpath = path + "'/" + m;
 
                                 const address = getAddressFromSeed(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target);
+
+                                if (address.Keys.pubkey == target) {
+                                    var found = "-------------------------------------------------------\n\r";
+                                    found = found + "\t found!!!!!!  ---> target at: " + address.Seed.seed_index + "_" + j + "_" + k + "_" + m + "\n\r";
+                                    found = found + "-------------------------------------------------------\n\r";
+                                    console.log(found);
+
+                                    keysArray.push(found);
+
+                                    return;
+                                }
 
                                 keysArray.push(address);
                             }
@@ -110,29 +157,22 @@ loadInputFile("./data/input.json")
             console.log(error);
         }
 
-        const opts = {
-            fields: ['Seed.seed_index', 'Seed.seedShort', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch'],
-            delimiter: ", \t",
-            quote: '',
-            unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
-        };
-
         try {
+
             const parser = new Json2csvParser(opts);
             const outputCsvString = parser.parse(keysArray)
-            console.log(outputCsvString);
+            //console.log(outputCsvString);
 
             fse.outputFile(outputFile, outputCsvString)
                 .then(() => fse.readFile(outputFile, 'utf8'))
                 .then(data => {
                     console.log(data)
+                    console.log("done");
                 })
                 .catch(err => {
                     console.error(err)
                 })
-
         } catch (err) {
             console.error(err);
         }
-        console.log("done");
     });
