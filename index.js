@@ -11,14 +11,17 @@ const createCsvStringifier = require('csv-writer').createObjectCsvStringifier;
 const CsvStream = require('json2csv-stream');
 const stringToStream = require('string-to-stream');
 const transform = require('stream-transform');
+const replaceLast = require('replace-last');
 
-const depth_1stround = 11;
-const depth_2ndround = 11;
+const depth_ParentRound = 3;
+const depth_Child1Round = 3;
+const depth_Child2Round = 3;
 
 const outputFile = './data/output.csv';
 
-var keysArray = [];
+var allFoundKeysArray = [];
 const basePath = `m/44'/148'/`;
+const hideMe = "*****";
 
 const opts = {
     fields: [{
@@ -53,9 +56,23 @@ const opts = {
 
 //Generate Derivation Path Object
 var derivationCollection = [];
-for (let i = 0; i < depth_1stround; i++) {
-    var outerIndex = i;
-    derivationCollection.push(outerIndex);
+
+for (let i = 0; i < depth_ParentRound; i++) {
+    var parentIndex = i.toString() + "'";
+
+    derivationCollection.push(parentIndex);
+
+    for (let j = 0; j < depth_Child1Round; j++) {
+        var child1Index = j.toString() + "'";
+
+        derivationCollection.push(parentIndex + "/" + child1Index);
+
+        for (let k = 0; k < depth_Child2Round; k++) {
+            var child2Index = k.toString() + "'";
+
+            derivationCollection.push(parentIndex + "/" + child1Index + "/" + child2Index);
+        }
+    }
 }
 
 //Constructor for holding each one of the keys
@@ -66,40 +83,44 @@ function OutputKey(_Seed, _Passphrase, _DerivationPath, _Keys) {
     this.Keys = _Keys
 }
 
-function getFullDerivationPath(_path) {
-    return basePath + _path + "'";
+function getFullDerivationPath(_pathObject) {
+    return basePath + _pathObject;
 }
 
-function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, _path, _path_index, _target) {
+function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, _pathObject, _pathObjectIndex, _target) {
     const wallet = (_passphrase != null) ? StellarHDWallet.fromMnemonic(_seed, _passphrase) : StellarHDWallet.fromMnemonic(_seed);
-    var pubKey = wallet.getPublicKey(_path);
-    const fullpath = getFullDerivationPath(_path);
-    var derive = wallet.derive(fullpath);
+    const fullDerivationPath = getFullDerivationPath(_pathObject);
+
+    //last child cannot be hardened for Public Key retrieval
+    var santitizedPath = replaceLast(_pathObject, "'", "");
+    var pubKey = wallet.getPublicKey(santitizedPath);
+
+    var derive = wallet.derive(fullDerivationPath);
 
     let _s = {
         seed_index: _seed_index,
-        seedShort: (_seed.substr(0, 5) + "********").substr(0, 5)
+        seedShort: (_seed.substr(0, 5) + hideMe).substr(0, 5)
     }
 
     let _p = {
         passphrase_index: _passphrase_index,
-        passphrase: (_passphrase.substr(0, 5) + "********").substr(0, 5)
+        passphrase: (_passphrase.substr(0, 5) + hideMe).substr(0, 5)
     }
 
     let _d = {
-        path_index: _path_index,
+        path_index: _pathObjectIndex,
         derive: derive,
         parentkey: derive.toString('hex'),
-        path: fullpath + (fullpath.length <= 13) ? fullpath + "\t" + "\t" : null,
+        path: fullDerivationPath + (fullDerivationPath.length <= 13) ? fullDerivationPath + "\t" + "\t" : null,
     }
 
     let _k = {
         pubkey: pubKey,
-        privkey: null,
+        privkey: hideMe,
         isMatch: (pubKey == _target)
     }
 
-    //console.log("PublicKey [" + _s.seed_index + "." + _p.passphrase_index + "." + _path_index + "] - [" + fullpath + "]: " + pubKey + " = " + _k.isMatch);
+    //console.log("PublicKey [" + _s.seed_index + "." + _p.passphrase_index + "." + _pathObjectIndex + "] - [" + fullDerivationPath + "]: " + pubKey + " = " + _k.isMatch);
 
     return new OutputKey(_s, _p, _d, _k);
 }
@@ -117,42 +138,32 @@ loadInputFile("./data/input.json")
                 const seed = _seed;
 
                 if (StellarHDWallet.validateMnemonic(_seed)) {
-                    const shortSeed = seed.substr(0, 30) + "...";
+                    const shortSeed = seed.substr(0, 30) + hideMe;
 
                     each(json.passwords, function(_passphrase, j) {
                         const passphrase = _passphrase;
 
-                        each(derivationCollection, function(_path, k) {
-                            var path = _path;
-                            5
-                            var fullpath = getFullDerivationPath(path);
+                        each(derivationCollection, function(_pathObject, k) {
 
-                            const key = getAddressFromSeed(seed, i, passphrase, j, path, k, fullpath, k, target);
-                            keysArray.push(key);
+                            const key = getAddressFromSeed(seed, i, passphrase, j, _pathObject, k, target);
 
-                            //one level deeper, one more round
-                            for (let m = 0; m < depth_2ndround; m++) {
-                                secondlevelpath = path + "'/" + m;
+                            allFoundKeysArray.push(key);
 
-                                const address = getAddressFromSeed(seed, i, passphrase, j, secondlevelpath, k + "[" + m + "]", target);
+                            if (key.Keys.pubkey == target) {
+                                var found = "-------------------------------------------------------\n\r";
+                                found = found + "\t found!!!!!!  ---> target at: " + key.Seed.seed_index + "_" + j + "_" + k + "_" + m + "\n\r";
+                                found = found + "-------------------------------------------------------\n\r";
+                                console.log(found);
 
-                                if (address.Keys.pubkey == target) {
-                                    var found = "-------------------------------------------------------\n\r";
-                                    found = found + "\t found!!!!!!  ---> target at: " + address.Seed.seed_index + "_" + j + "_" + k + "_" + m + "\n\r";
-                                    found = found + "-------------------------------------------------------\n\r";
-                                    console.log(found);
+                                allFoundKeysArray.push(found);
 
-                                    keysArray.push(found);
-
-                                    return;
-                                }
-
-                                keysArray.push(address);
+                                return;
                             }
+
                         });
                     })
                 } else {
-                    console.log("invalid seed: " + seed.substr(0, 20) + "...");
+                    console.log("invalid seed: " + seed.substr(0, 20) + hideMe);
                 }
             })
 
@@ -163,8 +174,8 @@ loadInputFile("./data/input.json")
         try {
 
             const parser = new Json2csvParser(opts);
-            const outputCsvString = parser.parse(keysArray)
-            //console.log(outputCsvString);
+            const outputCsvString = parser.parse(allFoundKeysArray)
+            console.log(outputCsvString);
 
             fse.outputFile(outputFile, outputCsvString)
                 .then(() => fse.readFile(outputFile, 'utf8'))
