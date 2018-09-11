@@ -13,9 +13,10 @@ const stringToStream = require('string-to-stream');
 const transform = require('stream-transform');
 const replaceLast = require('replace-last');
 
-const depth_ParentRound = 3;
-const depth_Child1Round = 3;
-const depth_Child2Round = 3;
+const commonDepth = 6;
+const depth_ParentRound = commonDepth;
+const depth_Child1Round = commonDepth;
+const depth_Child2Round = commonDepth;
 
 const outputFile = './data/output.csv';
 
@@ -111,7 +112,8 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
         path_index: _pathObjectIndex,
         derive: derive,
         parentkey: derive.toString('hex'),
-        path: fullDerivationPath + (fullDerivationPath.length <= 13) ? fullDerivationPath + "\t" + "\t" : null,
+        //helps format the csv, so short derivation paths get extra padding and don't skew the columns
+        path: fullDerivationPath + (fullDerivationPath.length <= 13) ? fullDerivationPath + "       \t" + "\t" : null,
     }
 
     let _k = {
@@ -120,7 +122,7 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
         isMatch: (pubKey == _target)
     }
 
-    //console.log("PublicKey [" + _s.seed_index + "." + _p.passphrase_index + "." + _pathObjectIndex + "] - [" + fullDerivationPath + "]: " + pubKey + " = " + _k.isMatch);
+    console.log("PublicKey [" + _s.seed_index + "." + _p.passphrase_index + "." + _pathObjectIndex + "] - [" + fullDerivationPath + "]: " + pubKey + " = " + _k.isMatch);
 
     return new OutputKey(_s, _p, _d, _k);
 }
@@ -130,6 +132,12 @@ loadInputFile("./data/input.json")
     .then(json => {
         try {
             const target = json.target;
+
+            console.log("Found: " +
+                json.seeds.length +
+                " seed(s), " +
+                json.passwords.length +
+                " password(s) and " + derivationCollection.length + " derivation path combination(s). Attempting every possible combination...");
 
             console.log("Looking for : " + target);
 
