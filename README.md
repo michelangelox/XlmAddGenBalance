@@ -1,4 +1,4 @@
-# Stellar XLM lost address retriever [![Build Status](https://travis-ci.org/Islandora/islandora_example_module.png?branch=7.x)](https://travis-ci.org/Islandora/islandora_example_module)
+# Stellar XLM lost address retriever
 
 ## Introduction
 This Node tool was written for the purpose of attempting to recover access to an XLM Stellar address of which I was not entirely sure of the combination of seed, 25th word passwords (if any), nor derivation path I may have used to generate the address,
