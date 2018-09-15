@@ -1,5 +1,3 @@
-//const bip39 = require("bip39");
-//const bitcoinlib = require("bitcoinjs-lib");
 const StellarHDWallet = require("stellar-hd-wallet");
 const each = require("array-each");
 const loadInputFile = require("load-json-file");
@@ -13,10 +11,10 @@ const stringToStream = require('string-to-stream');
 const transform = require('stream-transform');
 const replaceLast = require('replace-last');
 
-const commonDepth = 6;
-const depth_ParentRound = commonDepth;
-const depth_Child1Round = commonDepth;
-const depth_Child2Round = commonDepth;
+var childDepthDepth = 6; //default valuemif not define in JSON
+var depth_ParentRound = childDepthDepth;
+var depth_Child1Round = childDepthDepth;
+var depth_Child2Round = childDepthDepth;
 
 const outputFile = './data/output.csv';
 
@@ -25,6 +23,7 @@ const basePath = `m/44'/148'/`;
 const hideMe = "*****";
 
 const opts = {
+
     fields: [{
         label: "Seed Index",
         value: 'Seed.seed_index'
@@ -50,25 +49,26 @@ const opts = {
         label: "Matches Seeked Key",
         value: "Keys.isMatch"
     }],
+
     delimiter: ", ",
     quote: '',
     unnwind: ['Seed.seed_index', 'Seed', 'Passphrase.passphrase_index', 'Passphrase.passphrase', 'DerivationPath.path_index', 'DerivationPath.path', 'DerivationPath.parentkey', 'Keys.pubkey', 'Keys.isMatch']
 };
 
-//Generate Derivation Path Object
+//Generate Derivation Path Object, 3 levels deep
 var derivationCollection = [];
 
-for (let i = 0; i < depth_ParentRound; i++) {
+for (let i = 0; i < depth_ParentRound; i++) { //level 1
     var parentIndex = i.toString() + "'";
 
     derivationCollection.push(parentIndex);
 
-    for (let j = 0; j < depth_Child1Round; j++) {
+    for (let j = 0; j < depth_Child1Round; j++) { // level 2
         var child1Index = j.toString() + "'";
 
         derivationCollection.push(parentIndex + "/" + child1Index);
 
-        for (let k = 0; k < depth_Child2Round; k++) {
+        for (let k = 0; k < depth_Child2Round; k++) { // level 3
             var child2Index = k.toString() + "'";
 
             derivationCollection.push(parentIndex + "/" + child1Index + "/" + child2Index);
@@ -76,7 +76,7 @@ for (let i = 0; i < depth_ParentRound; i++) {
     }
 }
 
-//Constructor for holding each one of the keys
+//Constructor for holding each one of the keys and corresponding data
 function OutputKey(_Seed, _Passphrase, _DerivationPath, _Keys) {
     this.Seed = _Seed
     this.Passphrase = _Passphrase
@@ -89,10 +89,11 @@ function getFullDerivationPath(_pathObject) {
 }
 
 function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, _pathObject, _pathObjectIndex, _target) {
+
     const wallet = (_passphrase != null) ? StellarHDWallet.fromMnemonic(_seed, _passphrase) : StellarHDWallet.fromMnemonic(_seed);
     const fullDerivationPath = getFullDerivationPath(_pathObject);
 
-    //last child cannot be hardened for Public Key retrieval
+    //last child cannot be hardened for Public Key retrieval - stellar-hd-wallet library does not support it and throws an exception
     var santitizedPath = replaceLast(_pathObject, "'", "");
     var pubKey = wallet.getPublicKey(santitizedPath);
 
@@ -122,24 +123,25 @@ function getAddressFromSeed(_seed, _seed_index, _passphrase, _passphrase_index, 
         isMatch: (pubKey == _target)
     }
 
-    console.log("PublicKey [" + _s.seed_index + "." + _p.passphrase_index + "." + _pathObjectIndex + "] - [" + fullDerivationPath + "]: " + pubKey + " = " + _k.isMatch);
+    console.log("Checking PublicKey @ [seedIndex: " + _s.seed_index + ", passphraseIndex: " + _p.passphrase_index + ", derivationPathIndex: " + _pathObjectIndex + "]: fullDerivationPath: " + fullDerivationPath + " - (" + pubKey.substr(0, 5) + hideMe + " == " + _target.substr(0, 5) + hideMe + ") ==> isMatch: " + _k.isMatch);
 
     return new OutputKey(_s, _p, _d, _k);
+
 }
 
-//load json file, parse and recursively populate the object with keys
+//loads json file, parses and recursively populate the object with found keys
 loadInputFile("./data/input.json")
     .then(json => {
         try {
-            const target = json.target;
+            const targets = json.targets;
 
-            console.log("Found: " +
+            console.log("INIT: Strating search with: " +
                 json.seeds.length +
                 " seed(s), " +
                 json.passwords.length +
-                " password(s) and " + derivationCollection.length + " derivation path combination(s). Attempting every possible combination...");
+                " password(s) and " + derivationCollection.length + " derivation path combination(s). Attempting every possible combination... looking for " + targets.length + " target(s).");
 
-            console.log("Looking for : " + target);
+            childDepthDepth = (json.children != undefined) ? json.childre : childDepthDepth;
 
             each(json.seeds, function(_seed, i) {
 
@@ -153,21 +155,26 @@ loadInputFile("./data/input.json")
 
                         each(derivationCollection, function(_pathObject, k) {
 
-                            const key = getAddressFromSeed(seed, i, passphrase, j, _pathObject, k, target);
+                            each(targets, function(_target, i) {
 
-                            allFoundKeysArray.push(key);
+                                const key = getAddressFromSeed(seed, i, passphrase, j, _pathObject, k, _target);
 
-                            if (key.Keys.pubkey == target) {
-                                var found = "-------------------------------------------------------\n\r";
-                                found = found + "\t found!!!!!!  ---> target at: " + key.Seed.seed_index + "_" + j + "_" + k + "_" + m + "\n\r";
-                                found = found + "-------------------------------------------------------\n\r";
-                                console.log(found);
+                                allFoundKeysArray.push(key);
 
-                                allFoundKeysArray.push(found);
+                                if (_target == key.Keys.pubkey) {
 
-                                return;
-                            }
+                                    var found = "-------------------------------------------------------\n\r";
+                                    found += "\t target + "
+                                    _target + " FOUND!!!!!!  ---> target at: " + key.Seed.seed_index + "_" + j + "_" + k + "_" + m + "\n\r";
+                                    found += "-------------------------------------------------------\n\r";
 
+                                    console.log(found);
+
+                                    allFoundKeysArray.push(found);
+
+                                    return;
+                                };
+                            });
                         });
                     })
                 } else {
@@ -181,6 +188,9 @@ loadInputFile("./data/input.json")
 
         try {
 
+            console.log("please wait while output is written to file...."
+
+            )
             const parser = new Json2csvParser(opts);
             const outputCsvString = parser.parse(allFoundKeysArray)
             console.log(outputCsvString);
