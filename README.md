@@ -5,7 +5,7 @@ This Node tool was written for the purpose of attempting to recover access to an
 
 It is fully compliant with BIP 39 and BIP 44, using the stellar-hd-wallet library for address generation.
 
-The reason I questioned my valid seed, is that after the 1.4.1 firmware on March 6th, 2018, suddenly my Ledger wallet displayed a brand new XLM address, which of course contained 0 Lumens. This same scenario seems to have hapebe to several others, right after a firmware update. I am still attemping to retrieve a substantial amount of Lumens on the address that my Ledger wallet was providing me originally, before the firmware upgrade. Although I am 99.99999% sure of the seed I used, I wanted to verify with a tool like this, to attempt every possible combination of every seed, password and several derivations path deep to ensure it wasn't a mistake of mine. 
+The reason I questioned my valid seed, is that after the 1.4.1 firmware on March 6th, 2018, suddenly my Ledger wallet displayed a brand new XLM address, which of course contained 0 Lumens. This same scenario seems to have happened to several others, right after the firmware update. I am still attemping to retrieve a substantial amount of Lumens on the address that my Ledger wallet was providing me originally, before the firmware upgrade. Although I am 99.99999% sure of the seed I used, I wanted to verify with a tool like this, to attempt every possible combination of every seed, password and several derivations path deep to ensure it wasn't a mistake of mine. 
 
 I have narrowed it down to the moment of the firmware upgrade. Feel free to reach out to share yor experience with me. I'd love to know about others who have experienced the same issue. 
 
@@ -22,9 +22,12 @@ Anyhow, the tool takes in a JSON file (/data/input.json) with a collection (arra
 
 ## Installation
 
-Clone, then with a console in the directory of the project run: npm install --save to retrieve the required module, modify the **/data/input.json** file with your own data and then debug or run index.js in the root of the project. 
+- Clone and with a console in the directory of the project,
+- Run: npm install --save (to retrieve the required dependencies/modules) 
+- Modify the provided **/data/input.json** file with your own data 
+- Run or debug index.js (in the root of the project)
 
-Whatever data is returned, is eventually written to a file in the same /data/ directory, named: **output.json**. 
+Whatever data is returned, is  written to a file in the same /data/ directory, named: **output.json**.
 
 ## Configuration
 
@@ -32,7 +35,8 @@ Replace the data in the dummy input.json file with your own. Debug or run index.
 
 ## Result
 
-While the program is running, the console displays ongoing parsing and results. Once done it will write a .csv file with all the results to teh data folder, named output.json, looking something like this: 
+While the program is running, the console displays ongoing parsing and results. Once done it will write a .csv file with all the results to the data folder, named output.json, looking something like this: 
+
 ```csv
 Seed Index, Shortened Seed, Password Index, Shortened Password, Derivation Path, Derivation Parent Key, Stellar Public Key, Matches Seeked Key
 0, asthm, 0, *****, m/44'/148'/0', b927859376ca051d16e90cc75fd48f90b305472da8f537903929cd7a81a704a2, GBJCYUFJA7VA4GOZV7ZFVB7FGZTLVQTNS7JWJOWQVK6GN7DBUW7L5I5O, false
