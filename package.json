@@ -44,7 +44,7 @@
     "deasync": "^0.1.19",
     "ed25519-hd-key": "^1.1.2",
     "ed25519-wasm-pro": "^1.1.1",
-    "fast-csv": "^2.5.0",
+    "fast-csv": "^4.3.6",
     "fs-extra": "^7.0.1",
     "json-stable-stringify": "^1.0.1",
     "json-stringify-safe": "^5.0.1",
